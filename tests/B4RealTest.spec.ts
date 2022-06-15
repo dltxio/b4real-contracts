@@ -140,4 +140,26 @@ describe("B4REAL token tests", async () => {
     expect(taxBalance.toString()).to.equal("10");
     expect(currentBalanceEth.toString()).to.equal("90");
   });
+
+  it("Should allow owner role to be changed", async () => {
+    const deployerAddress = await deployer.getAddress();
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [deployerAddress]
+    });
+    const OWNER_ROLE = await B4REAL.OWNER_ROLE();
+
+    const ownerIsDeployer = await B4REAL.hasRole(OWNER_ROLE, deployerAddress);
+    expect(ownerIsDeployer).to.equal(true);
+
+    await B4REAL.transferOwnership(userAddress);
+
+    const userIsDeployer = await B4REAL.hasRole(OWNER_ROLE, userAddress);
+    expect(userIsDeployer).to.equal(true);
+
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [deployerAddress]
+    });
+  });
 });

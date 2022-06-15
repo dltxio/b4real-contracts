@@ -47,6 +47,7 @@ contract B4REAL is ERC20, AccessControl {
 
     constructor() ERC20("B4REAL", "B4RE") {
         _setupRole(OWNER_ROLE, msg.sender);
+        _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
         _mint(msg.sender, 50_000_000 * 10**decimals()); // 50 million tokens
 
@@ -67,7 +68,7 @@ contract B4REAL is ERC20, AccessControl {
         emit ToggleWaiveFees(waiveFees);
     }
 
-    /// @notice Wether a wallet has been whitelisted?
+    /// @notice Whether a wallet has been whitelisted or not
     function whitelisted(address wallet) public view returns (bool) {
         return whitelist[wallet];
     }
