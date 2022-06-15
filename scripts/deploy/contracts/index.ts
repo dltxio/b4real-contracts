@@ -1,8 +1,5 @@
 import { ethers as tsEthers } from "ethers";
-import * as Token from "./Token";
-import * as TokenUpgradeable from "./TokenUpgradeable";
-import * as NFT from "./NFT";
-import * as NFTa from "./NFTa";
+import * as B4REAL from "./B4REAL";
 
 export interface DeploymentModule {
   contractNames: (...params: any) => string[];
@@ -15,6 +12,6 @@ export interface DeploymentModule {
   upgrade?: (deployer: tsEthers.Signer, addresses?: any) => void;
 }
 
-const modules: DeploymentModule[] = [Token, TokenUpgradeable, NFT, NFTa];
+const modules: DeploymentModule[] = [B4REAL];
 
 export default modules;

@@ -36,7 +36,7 @@ export default {
       chainId: 1337,
       accounts: [
         {
-          privateKey: process.env.PRIVATE_KEY,
+          privateKey: process.env.PRIVATE_KEY || defaultKey,
           balance: ethers.utils
             .parseEther(
               process.env.LOCAL_ETHER_BALANCE?.toString() ?? defaultEtherBalance
@@ -66,7 +66,34 @@ export default {
   solidity: {
     compilers: [
       {
-        version: "0.8.4",
+        version: "0.8.11",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.8.3",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.6.2",
+        settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.6.0",
         settings: {
           optimizer: {
             enabled: false,
