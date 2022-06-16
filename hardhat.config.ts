@@ -57,46 +57,23 @@ export default {
     mainnet: {
       url: process.env.MAINNET_URL || defaultRpcUrl,
       accounts: [process.env.PRIVATE_KEY || defaultKey]
+    },
+    polygonMainnet: {
+      url: process.env.POLY_URL || defaultRpcUrl,
+      accounts: [process.env.PRIVATE_KEY || defaultKey]
     }
   },
   etherscan: {
     // Obtain etherscan API key at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_KEY
+    apiKey: process.env.POLYGONSCAN_API_KEY
   },
   solidity: {
     compilers: [
       {
-        version: "0.8.11",
+        version: "0.8.7",
         settings: {
           optimizer: {
-            enabled: false,
-            runs: 200
-          }
-        }
-      },
-      {
-        version: "0.8.3",
-        settings: {
-          optimizer: {
-            enabled: false,
-            runs: 200
-          }
-        }
-      },
-      {
-        version: "0.6.2",
-        settings: {
-          optimizer: {
-            enabled: false,
-            runs: 200
-          }
-        }
-      },
-      {
-        version: "0.6.0",
-        settings: {
-          optimizer: {
-            enabled: false,
+            enabled: true,
             runs: 200
           }
         }
