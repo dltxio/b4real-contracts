@@ -36,7 +36,7 @@ For the local hardhat network, use the default `localhost` value for `networkNam
 ## Functions
 Below is a list of all non-standard functions
 
-setTaxFee:	Sets the fee percentage for the B4REAL Tax fund	(uint256 fee, uint256 feeDecimals) modifiers: onlyAdmin
+setTaxFee: Sets the fee percentage for the B4REAL Tax fund	(uint256 fee, uint256 feeDecimals) modifiers: onlyAdmin
 
 toggleTransactionFees: Toggles the in-built transaction fee on and off for all transactions modifiers: onlyAdmin
 
