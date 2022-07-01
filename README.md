@@ -34,25 +34,16 @@ npx hardhat <taskName>
 For the local hardhat network, use the default `localhost` value for `networkName`. 
 
 ## Functions
-Below is a list of all non-standard functions
-
-| Function | Description | Modifiers |
-| setTaxFee | Sets the fee percentage for the B4REAL Tax fund	(uint256 fee, uint256 feeDecimals) | onlyAdmin |
-
-| toggleTransactionFees | Toggles the in-built transaction fee on and off for all transactions | onlyAdmin |
-
-| whitelisted | Whether a wallet has been whitelisted or not | ---- |
-
-| exemptFromFee | Removes a wallet address to the whitelist | onlyAdmin, onlyValidAddress |
-
-| includeInFee | Adds a wallet address from the whitelist | onlyAdmin, onlyValidAddress |
-
-| updateB4REALTaxAddress | Updates the tax contract address | onlyAdmin |
-
-| calculateFee | return Number of tokens to hold as the fee | ---- |
-
-| transfer | Transfers tokens and takes tax when required | ---- |
-
-| setAdmin | Changes the admin role | onlyOwner |
-
-| transferOwnership | Transfers the owner role | onlyOwner |
+Below is a table of all non-standard functions
+| Function name          | Function description                                                                                    |
+|------------------------|---------------------------------------------------------------------------------------------------------|
+| setTaxFee              | Sets the fee percentage for the B4REAL Tax fund	(uint256 fee, uint256 feeDecimals) modifiers: onlyAdmin |
+| toggleTransactionFees  | Toggles the in-built transaction fee on and off for all transactions modifiers: onlyAdmin               |
+| whitelisted            | Whether a wallet has been whitelisted or not                                                            |
+| exemptFromFee          | Removes a wallet address to the whitelist modifiers: onlyAdmin, onlyValidAddress                        |
+| includeInFee           | Adds a wallet address from the whitelist modifiers: onlyAdmin, onlyValidAddress                         |
+| updateB4REALTaxAddress | Updates the tax contract address modifiers: onlyAdmin                                                   |
+| calculateFee           | return Number of tokens to hold as the fee                                                              |
+| transfer               | Transfers tokens and takes tax when required                                                            |
+| setAdmin               | Changes the admin role modifiers: onlyOwner                                                             |
+| transferOwnership      | Transfers the owner role modifiers: onlyOwner                                                           |
