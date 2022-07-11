@@ -125,14 +125,55 @@ contract B4REAL is ERC20, AccessControl {
         if (whitelist[to] && !waiveFees) {
             tokensForTax = calculateFee(amount, taxFee, taxFeeDecimals);
             remainder -= tokensForTax;
+            super.transfer(taxAddress, tokensForTax);
         }
-        super.transfer(taxAddress, tokensForTax);
         super.transfer(to, remainder);
         return true;
     }
 
-    function setAdmin(address admin) public onlyOwner {
-        grantRole(ADMIN_ROLE, admin);
+    function transferFrom(address sender, address recipient, uint256 amount)
+        public
+        override
+        returns (bool)
+    {
+        require(amount > 0, "The amount must be greater than 0");
+
+        uint256 tokensForTax;
+
+        uint256 remainder = amount;
+
+        // calculate the number of tokens the Tax should take
+        if (whitelist[recipient] && !waiveFees) {
+            tokensForTax = calculateFee(amount, taxFee, taxFeeDecimals);
+            remainder -= tokensForTax;
+            // send tax
+            transferTax(sender, tokensForTax);
+        }
+
+        super.transferFrom(sender, recipient, remainder);
+        return true;
+    }
+
+    function transferTax(
+        address sender,
+        uint256 amount
+    ) private {
+        address recipient = taxAddress;
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        _balances[sender] = senderBalance - amount;
+
+        _balances[recipient] += amount;
+
+        emit Transfer(sender, recipient, amount);
+
+        _afterTokenTransfer(sender, recipient, amount);
     }
 
     function transferOwnership(address owner) public onlyOwner {

@@ -7,17 +7,21 @@ import { getRevertMessage } from "./utils";
 
 let B4REAL: tsEthers.Contract;
 let deployer: tsEthers.Signer;
+let secondUserSigner: tsEthers.Signer;
+let userSigner: tsEthers.Signer;
 let taxAddress: string;
 let userAddress: string;
+let secondUserAddress: string;
 let whiteListAddress: string;
 
 describe("B4REAL token tests", async () => {
   before(async () => {
-    deployer = (await ethers.getSigners())[0];
-    userAddress = "0x18a5ff44dcc65e8bFD01F48496f8f4Be6980CaA9";
+    [deployer, userSigner, secondUserSigner] = await ethers.getSigners();
+
+    userAddress = await userSigner.getAddress();
+    secondUserAddress = await secondUserSigner.getAddress();
     taxAddress = "0xe3F078F80A530cCD3BbF221612dDca3B0724579D";
     whiteListAddress = "0xb7c87887173cA53Db40f706b671602ad8D1479F4";
-
     const B4REALContract = await ethers.getContractFactory("B4REAL");
 
     B4REAL = await B4REALContract.deploy();
@@ -139,6 +143,123 @@ describe("B4REAL token tests", async () => {
     // 2% of 100 is 2, 100 - 2 = 98 ect
     expect(taxBalance.toString()).to.equal("10");
     expect(currentBalanceEth.toString()).to.equal("90");
+  });
+
+  it("Should test the transferFrom function and not tax with a normal tranaction", async () => {
+    const openingBalance = await B4REAL.balanceOf(secondUserAddress);
+
+    const openingTaxBalance = Number(
+      ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
+    );
+
+    // Nothing in this account yet
+    expect(openingBalance.toString()).to.equal("0");
+
+    const amount = ethers.utils.parseEther("1");
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [userAddress]
+    });
+
+    // Approve secondUserAddress
+    await B4REAL.connect(userSigner).approve(secondUserAddress, amount);
+
+    const allowance = await B4REAL.allowance(userAddress, secondUserAddress);
+    // Check allowance is correct
+    expect(allowance).to.equal(amount.toString());
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [userAddress]
+    });
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [secondUserAddress]
+    });
+
+    await B4REAL.connect(secondUserSigner).transferFrom(
+      userAddress,
+      secondUserAddress,
+      amount
+    );
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [secondUserAddress]
+    });
+
+    const currentUser2Balance = await B4REAL.balanceOf(secondUserAddress);
+
+    const closingTaxBalance = Number(
+      ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
+    );
+
+    // no tax should be applied so full amount should be sent to secondUserAddress
+    // and the tax address should have no balance change
+    expect(currentUser2Balance.toString()).to.equal(amount.toString());
+    expect(openingTaxBalance.toString()).to.equal(closingTaxBalance.toString());
+  });
+
+  it("Should test the transferFrom function and apply tax correctly", async () => {
+    await B4REAL.includeInFee(secondUserAddress);
+    const isWhitelisted = await B4REAL.whitelisted(secondUserAddress);
+    expect(isWhitelisted).to.equal(true);
+
+    const openingBalance = await B4REAL.balanceOf(secondUserAddress);
+
+    // Just the tokens from the previous test in this account
+    expect(openingBalance.toString()).to.equal(ethers.utils.parseEther("1"));
+
+    const openingTaxBalance = Number(
+      ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
+    );
+
+    // Just the tokens from the previous test in this account
+    expect(openingTaxBalance).to.equal(10);
+
+    const amount = ethers.utils.parseEther("1");
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [userAddress]
+    });
+
+    // Approve secondUserAddress
+    await B4REAL.connect(userSigner).approve(secondUserAddress, amount);
+
+    const allowance = await B4REAL.allowance(userAddress, secondUserAddress);
+
+    // Check allowance is correct, including call from before
+    expect(allowance.toString()).to.equal(amount.toString());
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [userAddress]
+    });
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [secondUserAddress]
+    });
+
+    await B4REAL.connect(secondUserSigner).transferFrom(
+      userAddress,
+      secondUserAddress,
+      amount
+    );
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [secondUserAddress]
+    });
+
+    const currentUser2Balance = await B4REAL.balanceOf(secondUserAddress);
+
+    const closingTaxBalance = Number(
+      ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
+    );
+
+    // tax should be applied
+    expect(currentUser2Balance.toString()).to.equal("1900000000000000000");
+    expect(closingTaxBalance.toString()).to.equal("10.1");
   });
 
   it("Should allow owner role to be changed", async () => {
