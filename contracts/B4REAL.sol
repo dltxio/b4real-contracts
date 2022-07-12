@@ -19,6 +19,13 @@ contract B4REAL is ERC20, AccessControl {
 
     event ToggleWaiveFees(bool _status);
 
+    event SetTaxFee(uint256 _fee, uint256 _decimals);
+    event ExemptFromFee(address _account);
+    event IncludeInFee(address _account);
+    event UpdateB4REALTaxAddress(address _address);
+    event SetAdmin(address _account);
+    event TransferOwnership(address _newOwner);
+
     mapping(address => bool) public whitelist;
 
     modifier onlyValidAddress(address wallet) {
@@ -58,12 +65,17 @@ contract B4REAL is ERC20, AccessControl {
     /// @notice Sets the fee percentage for the B4REAL Tax fund
     function setTaxFee(uint256 fee, uint256 feeDecimals) public onlyAdmin {
         require(fee >= 0, "The B4REAL Tax fee must be greater than 0");
+        if (feeDecimals == 0) {
+            // If the feeDecimals is greater than 0 then the percent is less then 100%
+            require(fee < 100, "The B4REAL Tax fee must be less than 100");
+        }
+        emit SetTaxFee(fee, feeDecimals);
         taxFee = fee;
         taxFeeDecimals = feeDecimals;
     }
 
     /// @notice Toggles the in-built transaction fee on and off for all transactions
-    function toggleTransactionFees() public onlyAdmin {
+    function toggleTransactionFees() external onlyAdmin {
         waiveFees = !waiveFees;
         emit ToggleWaiveFees(waiveFees);
     }
@@ -75,25 +87,28 @@ contract B4REAL is ERC20, AccessControl {
 
     /// @notice Removes a wallet address to the whitelist
     function exemptFromFee(address wallet)
-        public
+        external
         onlyAdmin
         onlyValidAddress(wallet)
     {
+        emit ExemptFromFee(wallet);
         whitelist[wallet] = false;
     }
 
     /// @notice Adds a wallet address from the whitelist
     function includeInFee(address wallet)
-        public
+        external
         onlyAdmin
         onlyValidAddress(wallet)
     {
+        emit IncludeInFee(wallet);
         whitelist[wallet] = true;
     }
 
     /// @notice Updates the tax contract address
-    function updateB4REALTaxAddress(address newAddress) public onlyAdmin {
+    function updateB4REALTaxAddress(address newAddress) external onlyAdmin {
         require(taxAddress != newAddress, "New address cannot be the same");
+        emit UpdateB4REALTaxAddress(newAddress);
         taxAddress = newAddress;
     }
 
@@ -176,7 +191,8 @@ contract B4REAL is ERC20, AccessControl {
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function transferOwnership(address owner) public onlyOwner {
+    function transferOwnership(address owner) external onlyOwner {
+        emit TransferOwnership(owner);
         grantRole(OWNER_ROLE, owner);
         revokeRole(OWNER_ROLE, msg.sender);
     }

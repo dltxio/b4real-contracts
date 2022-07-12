@@ -62,6 +62,27 @@ describe("B4REAL token tests", async () => {
     }
   });
 
+  it("Should not allow admin to setup fees greater then 100%", async () => {
+    const taxFee = ethers.BigNumber.from("101");
+    const taxFeeDecimals = ethers.BigNumber.from("0");
+    try {
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [userAddress]
+      });
+
+      await B4REAL.setTaxFee(taxFee, taxFeeDecimals);
+      await hre.network.provider.request({
+        method: "hardhat_stopImpersonatingAccount",
+        params: [userAddress]
+      });
+    } catch (error) {
+      expect(getRevertMessage(error)).to.equal(
+        "The B4REAL Tax fee must be less than 100"
+      );
+    }
+  });
+
   it("Should allow admin to add or remove whitelist", async () => {
     await B4REAL.exemptFromFee(whiteListAddress);
     const isWhitelisted = await B4REAL.whitelisted(whiteListAddress);
