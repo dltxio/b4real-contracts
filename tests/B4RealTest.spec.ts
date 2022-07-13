@@ -122,6 +122,8 @@ describe("B4REAL token tests", async () => {
   it("Should test the transfer function and not tax with a normal tranaction", async () => {
     const openingBalance = await B4REAL.balanceOf(userAddress);
     expect(openingBalance.toString()).to.equal("0");
+    const waiveFees = await B4REAL.waiveFees();
+    expect(waiveFees).to.equal(false);
 
     const amount = ethers.utils.parseEther("100");
 
@@ -133,7 +135,6 @@ describe("B4REAL token tests", async () => {
       ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
     );
 
-    const amountEth = Number(ethers.utils.formatEther(amount));
     const currentBalanceEth = Number(ethers.utils.formatEther(currentBalance));
 
     // no tax should be applied
@@ -145,6 +146,9 @@ describe("B4REAL token tests", async () => {
     await B4REAL.includeInFee(whiteListAddress);
     const isWhitelisted2 = await B4REAL.whitelisted(whiteListAddress);
     expect(isWhitelisted2).to.equal(true);
+
+    const waiveFees = await B4REAL.waiveFees();
+    expect(!waiveFees).to.equal(true);
 
     const openingBalance = await B4REAL.balanceOf(whiteListAddress);
     expect(openingBalance.toString()).to.equal("0");
@@ -161,7 +165,6 @@ describe("B4REAL token tests", async () => {
 
     const currentBalanceEth = Number(ethers.utils.formatEther(currentBalance));
 
-    // 2% of 100 is 2, 100 - 2 = 98 ect
     expect(taxBalance.toString()).to.equal("10");
     expect(currentBalanceEth.toString()).to.equal("90");
   });
@@ -340,9 +343,7 @@ describe("B4REAL token tests", async () => {
     const ownerIsDeployer = await B4REAL.hasRole(OWNER_ROLE, deployerAddress);
     expect(ownerIsDeployer).to.equal(true);
 
-    await B4REAL.initializeTransferOwnership(userAddress);
-    expect(await B4REAL.penddingOwner()).to.equal(userAddress);
-    await B4REAL.confirmTransferOwnership();
+    await B4REAL.transferOwnership(userAddress);
 
     const userIsDeployer = await B4REAL.hasRole(OWNER_ROLE, userAddress);
     expect(userIsDeployer).to.equal(true);
