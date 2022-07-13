@@ -294,7 +294,9 @@ describe("B4REAL token tests", async () => {
     const ownerIsDeployer = await B4REAL.hasRole(OWNER_ROLE, deployerAddress);
     expect(ownerIsDeployer).to.equal(true);
 
-    await B4REAL.transferOwnership(userAddress);
+    await B4REAL.initializeTransferOwnership(userAddress);
+    expect(await B4REAL.penddingOwner()).to.equal(userAddress);
+    await B4REAL.confirmTransferOwnership();
 
     const userIsDeployer = await B4REAL.hasRole(OWNER_ROLE, userAddress);
     expect(userIsDeployer).to.equal(true);

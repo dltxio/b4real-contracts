@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.5;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -9,6 +9,7 @@ contract B4REAL is ERC20, AccessControl {
     using SafeERC20 for IERC20;
 
     address private taxAddress = 0xe3F078F80A530cCD3BbF221612dDca3B0724579D;
+    address public penddingOwner;
     uint256 public taxFee;
     uint256 public taxFeeDecimals;
 
@@ -53,6 +54,7 @@ contract B4REAL is ERC20, AccessControl {
     }
 
     constructor() ERC20("B4REAL", "B4RE") {
+        penddingOwner = msg.sender;
         _setupRole(OWNER_ROLE, msg.sender);
         _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
@@ -69,9 +71,9 @@ contract B4REAL is ERC20, AccessControl {
             // If the feeDecimals is greater than 0 then the percent is less then 100%
             require(fee < 100, "The B4REAL Tax fee must be less than 100");
         }
-        emit SetTaxFee(fee, feeDecimals);
         taxFee = fee;
         taxFeeDecimals = feeDecimals;
+        emit SetTaxFee(fee, feeDecimals);
     }
 
     /// @notice Toggles the in-built transaction fee on and off for all transactions
@@ -91,8 +93,8 @@ contract B4REAL is ERC20, AccessControl {
         onlyAdmin
         onlyValidAddress(wallet)
     {
-        emit ExemptFromFee(wallet);
         whitelist[wallet] = false;
+        emit ExemptFromFee(wallet);
     }
 
     /// @notice Adds a wallet address from the whitelist
@@ -101,15 +103,15 @@ contract B4REAL is ERC20, AccessControl {
         onlyAdmin
         onlyValidAddress(wallet)
     {
-        emit IncludeInFee(wallet);
         whitelist[wallet] = true;
+        emit IncludeInFee(wallet);
     }
 
     /// @notice Updates the tax contract address
     function updateB4REALTaxAddress(address newAddress) external onlyAdmin {
         require(taxAddress != newAddress, "New address cannot be the same");
-        emit UpdateB4REALTaxAddress(newAddress);
         taxAddress = newAddress;
+        emit UpdateB4REALTaxAddress(newAddress);
     }
 
     /// @return Number of tokens to hold as the fee
@@ -191,9 +193,17 @@ contract B4REAL is ERC20, AccessControl {
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function transferOwnership(address owner) external onlyOwner {
-        emit TransferOwnership(owner);
-        grantRole(OWNER_ROLE, owner);
+    function initializeTransferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "The address cannot be the zero address");
+        require(newOwner != penddingOwner, "The address cannot be the existing penddingOwner");
+        require(newOwner != taxAddress, "The address cannot be the tax address");
+        require(newOwner != address(this), "The address cannot be the contract");
+        penddingOwner = newOwner;
+    }
+
+    function confirmTransferOwnership() external onlyOwner {
+        grantRole(OWNER_ROLE, penddingOwner);
         revokeRole(OWNER_ROLE, msg.sender);
+        emit TransferOwnership(penddingOwner);
     }
 }
