@@ -64,7 +64,7 @@ contract B4REAL is ERC20, AccessControl {
 
     /// @notice Sets the fee percentage for the B4REAL Tax fund
     function setTaxFee(uint256 fee, uint256 feeDecimals) public onlyAdmin {
-        require(fee >= 0, "The B4REAL Tax fee must be greater than 0");
+        require(fee > 0, "The B4REAL Tax fee must be greater than 0");
         if (feeDecimals == 0) {
             // If the feeDecimals is greater than 0 then the percent is less then 100%
             require(fee < 100, "The B4REAL Tax fee must be less than 100");
@@ -108,6 +108,7 @@ contract B4REAL is ERC20, AccessControl {
     /// @notice Updates the tax contract address
     function updateB4REALTaxAddress(address newAddress) external onlyAdmin {
         require(taxAddress != newAddress, "New address cannot be the same");
+        require(newAddress != address(0), "The address cannot be the zero address");
         taxAddress = newAddress;
         emit UpdateB4REALTaxAddress(newAddress);
     }
