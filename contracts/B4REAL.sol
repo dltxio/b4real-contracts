@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "hardhat/console.sol";
-
 contract B4REAL is ERC20, AccessControl {
     using SafeERC20 for IERC20;
 
