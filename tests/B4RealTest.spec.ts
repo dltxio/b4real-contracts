@@ -331,7 +331,6 @@ describe("B4REAL token tests", async () => {
     });
   });
 
-
   it("Should allow owner role to be changed", async () => {
     const deployerAddress = await deployer.getAddress();
     await hre.network.provider.request({
@@ -353,6 +352,4 @@ describe("B4REAL token tests", async () => {
       params: [deployerAddress]
     });
   });
-
-
 });
