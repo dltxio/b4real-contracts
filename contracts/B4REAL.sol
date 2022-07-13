@@ -13,7 +13,7 @@ contract B4REAL is ERC20, AccessControl {
     uint256 public taxFee;
     uint256 public taxFeeDecimals;
 
-    bool public waiveFees;
+    bool public waiveFees = false;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");

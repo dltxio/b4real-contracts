@@ -283,6 +283,52 @@ describe("B4REAL token tests", async () => {
     expect(closingTaxBalance.toString()).to.equal("10.1");
   });
 
+  it("Should allow admin to change the tax address", async () => {
+    const deployerAddress = await deployer.getAddress();
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [deployerAddress]
+    });
+    try {
+      await B4REAL.updateB4REALTaxAddress(
+        "0xe3F078F80A530cCD3BbF221612dDca3B0724579D"
+      );
+    } catch (error) {
+      expect(getRevertMessage(error)).to.equal(
+        "New address cannot be the same"
+      );
+    }
+
+    await B4REAL.updateB4REALTaxAddress(
+      "0x3b09A467f139EDa93a72DaA23341843fE4753ACa"
+    );
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [deployerAddress]
+    });
+  });
+
+  it("Should allow admin to toggle waiveFees", async () => {
+    const deployerAddress = await deployer.getAddress();
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [deployerAddress]
+    });
+
+    const waiveFees = await B4REAL.waiveFees();
+    expect(waiveFees).to.equal(false);
+
+    await B4REAL.toggleTransactionFees();
+    const toggledWaiveFees = await B4REAL.waiveFees();
+    expect(toggledWaiveFees).to.equal(true);
+
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [deployerAddress]
+    });
+  });
+
+
   it("Should allow owner role to be changed", async () => {
     const deployerAddress = await deployer.getAddress();
     await hre.network.provider.request({
@@ -306,4 +352,6 @@ describe("B4REAL token tests", async () => {
       params: [deployerAddress]
     });
   });
+
+
 });
