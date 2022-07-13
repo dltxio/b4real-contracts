@@ -19,12 +19,10 @@ contract B4REAL is ERC20, AccessControl {
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
 
     event ToggleWaiveFees(bool _status);
-
     event SetTaxFee(uint256 _fee, uint256 _decimals);
     event ExemptFromFee(address _account);
     event IncludeInFee(address _account);
     event UpdateB4REALTaxAddress(address _address);
-    event SetAdmin(address _account);
     event TransferOwnership(address _newOwner);
 
     mapping(address => bool) public whitelist;
