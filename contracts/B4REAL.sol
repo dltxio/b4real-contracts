@@ -21,11 +21,6 @@ contract B4REAL is ERC20, AccessControl {
     event ToggleWaiveFees(bool _status);
 
     event SetTaxFee(uint256 _fee, uint256 _decimals);
-    event ExemptFromFee(address _account);
-    event IncludeInFee(address _account);
-    event UpdateB4REALTaxAddress(address _address);
-    event SetAdmin(address _account);
-    event TransferOwnership(address _newOwner);
 
     mapping(address => bool) public whitelist;
 
@@ -59,7 +54,6 @@ contract B4REAL is ERC20, AccessControl {
         _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
         _mint(msg.sender, 50_000_000 * 10**decimals()); // 50 million tokens
-
         // set the Tax fee to be 10%
         setTaxFee(10, 0);
     }
@@ -94,7 +88,6 @@ contract B4REAL is ERC20, AccessControl {
         onlyValidAddress(wallet)
     {
         whitelist[wallet] = false;
-        emit ExemptFromFee(wallet);
     }
 
     /// @notice Adds a wallet address from the whitelist
@@ -104,14 +97,13 @@ contract B4REAL is ERC20, AccessControl {
         onlyValidAddress(wallet)
     {
         whitelist[wallet] = true;
-        emit IncludeInFee(wallet);
     }
 
     /// @notice Updates the tax contract address
     function updateB4REALTaxAddress(address newAddress) external onlyAdmin {
         require(taxAddress != newAddress, "New address cannot be the same");
+        require(newAddress != address(0), "The address cannot be the zero address");
         taxAddress = newAddress;
-        emit UpdateB4REALTaxAddress(newAddress);
     }
 
     /// @return Number of tokens to hold as the fee
@@ -175,9 +167,9 @@ contract B4REAL is ERC20, AccessControl {
         address sender,
         uint256 amount
     ) private {
+        if (amount == 0) return;
         address recipient = taxAddress;
         require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
 
         _beforeTokenTransfer(sender, recipient, amount);
 
@@ -193,17 +185,8 @@ contract B4REAL is ERC20, AccessControl {
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function initializeTransferOwnership(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "The address cannot be the zero address");
-        require(newOwner != penddingOwner, "The address cannot be the existing penddingOwner");
-        require(newOwner != taxAddress, "The address cannot be the tax address");
-        require(newOwner != address(this), "The address cannot be the contract");
-        penddingOwner = newOwner;
-    }
-
-    function confirmTransferOwnership() external onlyOwner {
-        grantRole(OWNER_ROLE, penddingOwner);
+    function transferOwnership(address newOwner) external onlyOwner {
+        grantRole(OWNER_ROLE, newOwner);
         revokeRole(OWNER_ROLE, msg.sender);
-        emit TransferOwnership(penddingOwner);
     }
 }
