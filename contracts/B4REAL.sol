@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.5;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -18,6 +18,11 @@ contract B4REAL is ERC20, AccessControl {
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
 
     event ToggleWaiveFees(bool _status);
+    event SetTaxFee(uint256 _fee, uint256 _decimals);
+    event ExemptFromFee(address _account);
+    event IncludeInFee(address _account);
+    event UpdateB4REALTaxAddress(address _address);
+    event TransferOwnership(address _newOwner);
 
     mapping(address => bool) public whitelist;
 
@@ -57,13 +62,18 @@ contract B4REAL is ERC20, AccessControl {
 
     /// @notice Sets the fee percentage for the B4REAL Tax fund
     function setTaxFee(uint256 fee, uint256 feeDecimals) public onlyAdmin {
-        require(fee >= 0, "The B4REAL Tax fee must be greater than 0");
+        require(fee > 0, "The Tax fee must be greater than 0");
+        if (feeDecimals == 0) {
+            // If the feeDecimals is greater than 0 then the percent is less then 100%
+            require(fee < 100, "The B4REAL Tax fee must be less than 100");
+        }
         taxFee = fee;
         taxFeeDecimals = feeDecimals;
+        emit SetTaxFee(fee, feeDecimals);
     }
 
     /// @notice Toggles the in-built transaction fee on and off for all transactions
-    function toggleTransactionFees() public onlyAdmin {
+    function toggleTransactionFees() external onlyAdmin {
         waiveFees = !waiveFees;
         emit ToggleWaiveFees(waiveFees);
     }
@@ -75,26 +85,30 @@ contract B4REAL is ERC20, AccessControl {
 
     /// @notice Removes a wallet address to the whitelist
     function exemptFromFee(address wallet)
-        public
+        external
         onlyAdmin
         onlyValidAddress(wallet)
     {
         whitelist[wallet] = false;
+        emit ExemptFromFee(wallet);
     }
 
     /// @notice Adds a wallet address from the whitelist
     function includeInFee(address wallet)
-        public
+        external
         onlyAdmin
         onlyValidAddress(wallet)
     {
         whitelist[wallet] = true;
+        emit IncludeInFee(wallet);
     }
 
     /// @notice Updates the tax contract address
-    function updateB4REALTaxAddress(address newAddress) public onlyAdmin {
+    function updateB4REALTaxAddress(address newAddress) external onlyAdmin {
         require(taxAddress != newAddress, "New address cannot be the same");
+        require(newAddress != address(0), "The address cannot be the zero address");
         taxAddress = newAddress;
+        emit UpdateB4REALTaxAddress(taxAddress);
     }
 
     /// @return Number of tokens to hold as the fee
@@ -117,26 +131,42 @@ contract B4REAL is ERC20, AccessControl {
     {
         require(amount > 0, "The amount must be greater than 0");
 
-        uint256 tokensForTax;
-
-        uint256 remainder = amount;
-
         // calculate the number of tokens the Tax should take
-        if (whitelist[to] && !waiveFees) {
-            tokensForTax = calculateFee(amount, taxFee, taxFeeDecimals);
-            remainder -= tokensForTax;
-        }
-        super.transfer(taxAddress, tokensForTax);
+        uint256 remainder = transferTax(msg.sender, to, amount);
+
         super.transfer(to, remainder);
         return true;
     }
 
-    function setAdmin(address admin) public onlyOwner {
-        grantRole(ADMIN_ROLE, admin);
+    function transferFrom(address sender, address recipient, uint256 amount)
+        public
+        override
+        returns (bool)
+    {
+        require(amount > 0, "The amount must be greater than 0");
+
+        // calculate the number of tokens the Tax should take
+        uint256 remainder = transferTax(sender, recipient, amount);
+
+        super.transferFrom(sender, recipient, remainder);
+        return true;
     }
 
-    function transferOwnership(address owner) public onlyOwner {
-        grantRole(OWNER_ROLE, owner);
+    function transferTax(address sender, address recipient, uint256 amount) private returns (uint256 remainder) {
+        // calculate the number of tokens the Tax should take
+        uint256 _remainder = amount;
+        if (whitelist[recipient] && !waiveFees) {
+            uint256 tokensForTax;
+            tokensForTax = calculateFee(amount, taxFee, taxFeeDecimals);
+            _remainder -= tokensForTax;
+            _transfer(sender, taxAddress, tokensForTax);
+        }
+        return _remainder;
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        grantRole(OWNER_ROLE, newOwner);
         revokeRole(OWNER_ROLE, msg.sender);
+        emit TransferOwnership(newOwner);
     }
 }

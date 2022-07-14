@@ -34,16 +34,6 @@ export default {
   networks: {
     hardhat: {
       chainId: 1337,
-      accounts: [
-        {
-          privateKey: process.env.PRIVATE_KEY || defaultKey,
-          balance: ethers.utils
-            .parseEther(
-              process.env.LOCAL_ETHER_BALANCE?.toString() ?? defaultEtherBalance
-            )
-            .toString()
-        }
-      ],
       allowUnlimitedContractSize: false
     },
     kovan: {
@@ -70,10 +60,10 @@ export default {
   solidity: {
     compilers: [
       {
-        version: "0.8.7",
+        version: "0.8.15",
         settings: {
           optimizer: {
-            enabled: true,
+            enabled: false,
             runs: 200
           }
         }
