@@ -9,7 +9,6 @@ contract B4REAL is ERC20, AccessControl {
     using SafeERC20 for IERC20;
 
     address private taxAddress = 0xe3F078F80A530cCD3BbF221612dDca3B0724579D;
-    address public penddingOwner;
     uint256 public taxFee;
     uint256 public taxFeeDecimals;
 
@@ -52,7 +51,6 @@ contract B4REAL is ERC20, AccessControl {
     }
 
     constructor() ERC20("B4REAL", "B4RE") {
-        penddingOwner = msg.sender;
         _setupRole(OWNER_ROLE, msg.sender);
         _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
         _setRoleAdmin(ADMIN_ROLE, OWNER_ROLE);
