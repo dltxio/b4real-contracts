@@ -31,7 +31,9 @@ describe("B4REAL token tests", async () => {
 
   it("Should get 50 million balance after contract deployment", async () => {
     const balance = await B4REAL.balanceOf(await deployer.getAddress());
-    expect(balance.toString()).to.equal("50000000000000000000000000");
+    expect(balance).to.equal(
+      ethers.BigNumber.from("50000000000000000000000000")
+    );
   });
 
   it("Should get all of the fee setup after contract deployment", async () => {
@@ -51,15 +53,22 @@ describe("B4REAL token tests", async () => {
       });
 
       await B4REAL.setTaxFee(taxFee, taxFeeDecimals);
-      await hre.network.provider.request({
-        method: "hardhat_stopImpersonatingAccount",
-        params: [userAddress]
-      });
     } catch (error) {
       expect(getRevertMessage(error)).to.equal(
         "Address does not have admin permission"
       );
     }
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [userAddress]
+    });
+  });
+
+  it("Should get all of the fee setup after contract deployment", async () => {
+    const taxFee = ethers.BigNumber.from("10");
+    const taxFeeDecimals = ethers.BigNumber.from("0");
+    expect(await B4REAL.taxFee()).to.equal(taxFee);
+    expect(await B4REAL.taxFeeDecimals()).to.equal(taxFeeDecimals);
   });
 
   it("Should not allow admin to setup fees greater then 100%", async () => {
@@ -84,13 +93,17 @@ describe("B4REAL token tests", async () => {
   });
 
   it("Should allow admin to add or remove whitelist", async () => {
-    await B4REAL.exemptFromFee(whiteListAddress);
+    await expect(B4REAL.exemptFromFee(whiteListAddress))
+      .to.emit(B4REAL, "ExemptFromFee")
+      .withArgs(whiteListAddress);
     const isWhitelisted = await B4REAL.whitelisted(whiteListAddress);
     expect(isWhitelisted).to.equal(false);
 
-    await B4REAL.includeInFee(whiteListAddress);
+    await expect(B4REAL.includeInFee(whiteListAddress))
+      .to.emit(B4REAL, "IncludeInFee")
+      .withArgs(whiteListAddress);
     const isWhitelisted2 = await B4REAL.whitelisted(whiteListAddress);
-    expect(isWhitelisted2).to.equal(true);
+    expect(isWhitelisted2).to.be.true;
   });
 
   it("Should only allow admin to add whiteList", async () => {
@@ -121,7 +134,7 @@ describe("B4REAL token tests", async () => {
 
   it("Should test the transfer function and not tax with a normal tranaction", async () => {
     const openingBalance = await B4REAL.balanceOf(userAddress);
-    expect(openingBalance.toString()).to.equal("0");
+    expect(openingBalance).to.equal("0");
     const waiveFees = await B4REAL.waiveFees();
     expect(waiveFees).to.equal(false);
 
@@ -138,20 +151,20 @@ describe("B4REAL token tests", async () => {
     const currentBalanceEth = Number(ethers.utils.formatEther(currentBalance));
 
     // no tax should be applied
-    expect(currentBalanceEth.toString()).to.equal("100");
-    expect(taxBalance.toString()).to.equal("0");
+    expect(currentBalanceEth).to.equal(ethers.BigNumber.from("100"));
+    expect(taxBalance).to.equal(ethers.BigNumber.from("0"));
   });
 
   it("Should test the transfer function and apply tax correctly", async () => {
     await B4REAL.includeInFee(whiteListAddress);
     const isWhitelisted2 = await B4REAL.whitelisted(whiteListAddress);
-    expect(isWhitelisted2).to.equal(true);
+    expect(isWhitelisted2).to.be.true;
 
     const waiveFees = await B4REAL.waiveFees();
-    expect(!waiveFees).to.equal(true);
+    expect(!waiveFees).to.be.true;
 
     const openingBalance = await B4REAL.balanceOf(whiteListAddress);
-    expect(openingBalance.toString()).to.equal("0");
+    expect(openingBalance).to.equal(ethers.BigNumber.from("0"));
 
     const amount = ethers.utils.parseEther("100");
 
@@ -165,8 +178,8 @@ describe("B4REAL token tests", async () => {
 
     const currentBalanceEth = Number(ethers.utils.formatEther(currentBalance));
 
-    expect(taxBalance.toString()).to.equal("10");
-    expect(currentBalanceEth.toString()).to.equal("90");
+    expect(taxBalance).to.equal(ethers.BigNumber.from("10"));
+    expect(currentBalanceEth).to.equal(ethers.BigNumber.from("90"));
   });
 
   it("Should test the transferFrom function and not tax with a normal tranaction", async () => {
@@ -177,7 +190,7 @@ describe("B4REAL token tests", async () => {
     );
 
     // Nothing in this account yet
-    expect(openingBalance.toString()).to.equal("0");
+    expect(openingBalance).to.equal(ethers.BigNumber.from("0"));
 
     const amount = ethers.utils.parseEther("1");
 
@@ -191,7 +204,7 @@ describe("B4REAL token tests", async () => {
 
     const allowance = await B4REAL.allowance(userAddress, secondUserAddress);
     // Check allowance is correct
-    expect(allowance).to.equal(amount.toString());
+    expect(allowance).to.equal(amount);
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [userAddress]
@@ -220,19 +233,21 @@ describe("B4REAL token tests", async () => {
 
     // no tax should be applied so full amount should be sent to secondUserAddress
     // and the tax address should have no balance change
-    expect(currentUser2Balance.toString()).to.equal(amount.toString());
-    expect(openingTaxBalance.toString()).to.equal(closingTaxBalance.toString());
+    expect(currentUser2Balance).to.equal(amount);
+    expect(openingTaxBalance).to.equal(closingTaxBalance);
   });
 
   it("Should test the transferFrom function and apply tax correctly", async () => {
     await B4REAL.includeInFee(secondUserAddress);
     const isWhitelisted = await B4REAL.whitelisted(secondUserAddress);
-    expect(isWhitelisted).to.equal(true);
+    expect(isWhitelisted).to.be.true;
 
     const openingBalance = await B4REAL.balanceOf(secondUserAddress);
 
     // Just the tokens from the previous test in this account
-    expect(openingBalance.toString()).to.equal(ethers.utils.parseEther("1"));
+    expect(openingBalance).to.equal(
+      ethers.BigNumber.from("1000000000000000000")
+    );
 
     const openingTaxBalance = Number(
       ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
@@ -254,7 +269,7 @@ describe("B4REAL token tests", async () => {
     const allowance = await B4REAL.allowance(userAddress, secondUserAddress);
 
     // Check allowance is correct, including call from before
-    expect(allowance.toString()).to.equal(amount.toString());
+    expect(allowance).to.equal(amount);
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [userAddress]
@@ -270,6 +285,7 @@ describe("B4REAL token tests", async () => {
       secondUserAddress,
       amount
     );
+
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [secondUserAddress]
@@ -277,13 +293,13 @@ describe("B4REAL token tests", async () => {
 
     const currentUser2Balance = await B4REAL.balanceOf(secondUserAddress);
 
-    const closingTaxBalance = Number(
-      ethers.utils.formatEther(await B4REAL.balanceOf(taxAddress))
-    );
+    const closingTaxBalance = await B4REAL.balanceOf(taxAddress);
 
     // tax should be applied
-    expect(currentUser2Balance.toString()).to.equal("1900000000000000000");
-    expect(closingTaxBalance.toString()).to.equal("10.1");
+    expect(currentUser2Balance).to.equal(
+      ethers.BigNumber.from("1900000000000000000")
+    );
+    expect(closingTaxBalance).to.equal("10100000000000000000");
   });
 
   it("Should allow admin to change the tax address", async () => {
@@ -302,9 +318,13 @@ describe("B4REAL token tests", async () => {
       );
     }
 
-    await B4REAL.updateB4REALTaxAddress(
-      "0x3b09A467f139EDa93a72DaA23341843fE4753ACa"
-    );
+    await expect(
+      B4REAL.updateB4REALTaxAddress(
+        "0x3b09A467f139EDa93a72DaA23341843fE4753ACa"
+      )
+    )
+      .to.emit(B4REAL, "UpdateB4REALTaxAddress")
+      .withArgs("0x3b09A467f139EDa93a72DaA23341843fE4753ACa");
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [deployerAddress]
@@ -321,9 +341,12 @@ describe("B4REAL token tests", async () => {
     const waiveFees = await B4REAL.waiveFees();
     expect(waiveFees).to.equal(false);
 
-    await B4REAL.toggleTransactionFees();
+    await expect(B4REAL.toggleTransactionFees())
+      .to.emit(B4REAL, "ToggleWaiveFees")
+      .withArgs(true);
+
     const toggledWaiveFees = await B4REAL.waiveFees();
-    expect(toggledWaiveFees).to.equal(true);
+    expect(toggledWaiveFees).to.be.true;
 
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
@@ -340,12 +363,14 @@ describe("B4REAL token tests", async () => {
     const OWNER_ROLE = await B4REAL.OWNER_ROLE();
 
     const ownerIsDeployer = await B4REAL.hasRole(OWNER_ROLE, deployerAddress);
-    expect(ownerIsDeployer).to.equal(true);
+    expect(ownerIsDeployer).to.be.true;
 
-    await B4REAL.transferOwnership(userAddress);
+    await expect(B4REAL.transferOwnership(userAddress))
+      .to.emit(B4REAL, "TransferOwnership")
+      .withArgs(userAddress);
 
     const userIsDeployer = await B4REAL.hasRole(OWNER_ROLE, userAddress);
-    expect(userIsDeployer).to.equal(true);
+    expect(userIsDeployer).to.be.true;
 
     await hre.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",

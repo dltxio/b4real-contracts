@@ -12,7 +12,7 @@ contract B4REAL is ERC20, AccessControl {
     uint256 public taxFee;
     uint256 public taxFeeDecimals;
 
-    bool public waiveFees = false;
+    bool public waiveFees;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
@@ -108,7 +108,7 @@ contract B4REAL is ERC20, AccessControl {
         require(taxAddress != newAddress, "New address cannot be the same");
         require(newAddress != address(0), "The address cannot be the zero address");
         taxAddress = newAddress;
-        emit UpdateB4REALTaxAddress(newAddress);
+        emit UpdateB4REALTaxAddress(taxAddress);
     }
 
     /// @return Number of tokens to hold as the fee
@@ -131,10 +131,8 @@ contract B4REAL is ERC20, AccessControl {
     {
         require(amount > 0, "The amount must be greater than 0");
 
-        uint256 remainder = amount;
-
         // calculate the number of tokens the Tax should take
-        remainder = transferTax(msg.sender, to, amount);
+        uint256 remainder = transferTax(msg.sender, to, amount);
 
         super.transfer(to, remainder);
         return true;
@@ -147,10 +145,8 @@ contract B4REAL is ERC20, AccessControl {
     {
         require(amount > 0, "The amount must be greater than 0");
 
-        uint256 remainder = amount;
-
         // calculate the number of tokens the Tax should take
-        remainder = transferTax(sender, recipient, amount);
+        uint256 remainder = transferTax(sender, recipient, amount);
 
         super.transferFrom(sender, recipient, remainder);
         return true;
